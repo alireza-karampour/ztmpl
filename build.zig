@@ -37,4 +37,26 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_exe_unit_tests.step);
+
+    const ztmpl = b.addModule("ztmpl", .{
+        .root_source_file = b.path("src/ztmpl/ztmpl.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const ztmpl_lib = b.addLibrary(.{
+        .name = "ztmpl",
+        .root_module = ztmpl,
+    });
+
+    const ztmpl_test = b.addTest(.{
+        .root_module = ztmpl,
+    });
+    const ztmpl_test_run = b.addRunArtifact(ztmpl_test);
+
+    test_step.dependOn(&ztmpl_test_run.step);
+    exe.root_module.addImport("ztmpl", ztmpl);
+
+    const ls_step = b.step("check", "lsp step");
+    ls_step.dependOn(&ztmpl_lib.step);
+    ls_step.dependOn(&ztmpl_test.step);
 }
